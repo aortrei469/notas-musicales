@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notas Musicales</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #1a1a2e;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-align: center;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff, #5f27cd, #00d2d3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            background: #2d3436;
+            border: 2px solid #444;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .mode-btn:hover {
+            background: #3d4446;
+        }
+
+        .mode-btn.active {
+            background: #5f27cd;
+            border-color: #7d3cff;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .status-display {
+            background: #2d3436;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: 100%;
+        }
+
+        .scoreboard {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .score-card {
+            background: #2d3436;
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 120px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .score-card.active {
+            border-color: #feca57;
+            box-shadow: 0 0 15px rgba(254, 202, 87, 0.3);
+        }
+
+        .score-card.winner {
+            border-color: #00d2d3;
+            box-shadow: 0 0 20px rgba(0, 210, 211, 0.5);
+        }
+
+        .player-name {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .player-score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #feca57;
+        }
+
+        .notes-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, auto);
+            gap: 12px;
+            padding: 20px;
+            max-width: 420px;
+        }
+
+        .notes-container .note-btn:nth-child(1) { grid-row: 1; grid-column: 1; }
+        .notes-container .note-btn:nth-child(2) { grid-row: 1; grid-column: 2; }
+        .notes-container .note-btn:nth-child(3) { grid-row: 1; grid-column: 3; }
+        .notes-container .note-btn:nth-child(4) { grid-row: 1; grid-column: 4; }
+        .notes-container .note-btn:nth-child(5) { grid-row: 2; grid-column: 1; }
+        .notes-container .note-btn:nth-child(6) { grid-row: 2; grid-column: 2; }
+        .notes-container .note-btn:nth-child(7) { grid-row: 2; grid-column: 3; }
+
+        .note-btn {
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: rgba(0, 0, 0, 0.75);
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+        }
+
+        .note-btn::before {
+            content: none;
+        }
+
+        .note-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .note-btn:active {
+            transform: scale(0.95);
+        }
+
+        .note-btn.active {
+            transform: scale(1.1);
+            filter: brightness(1.5);
+            box-shadow: 0 0 30px currentColor;
+        }
+
+        .note-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .note-btn.disabled:hover {
+            transform: none;
+        }
+
+        .note-do { background: #ff6b6b; }
+        .note-re { background: #feca57; }
+        .note-mi { background: #48dbfb; }
+        .note-fa { background: #ff9ff3; }
+        .note-sol { background: #54a0ff; }
+        .note-la { background: #5f27cd; color: #fff; }
+        .note-si { background: #00d2d3; }
+
+        .game-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .game-btn {
+            padding: 10px 20px;
+            font-size: 1rem;
+            border: 2px solid #444;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            background: #2d3436;
+        }
+
+        .game-btn:hover {
+            background: #3d4446;
+        }
+
+        .game-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .game-btn:disabled:hover {
+            background: #2d3436;
+        }
+
+        .pause-btn:hover {
+            background: #f39c12;
+            border-color: #f39c12;
+        }
+
+        .restart-btn:hover {
+            background: #e74c3c;
+            border-color: #e74c3c;
+        }
+
+        .start-btn-new {
+            background: #27ae60;
+            border-color: #27ae60;
+        }
+
+        .start-btn-new:hover {
+            background: #2ecc71;
+            border-color: #2ecc71;
+        }
+    </style>
+</head>
+<body>
+    <h1>Notas Musicales</h1>
+    <p class="subtitle">Memoria musical - Repite la secuencia</p>
+
+    <div class="mode-selector">
+        <button class="mode-btn active" data-players="1">1 Jugador</button>
+        <button class="mode-btn" data-players="2">2 Jugadores</button>
+        <button class="mode-btn" data-players="3">3 Jugadores</button>
+        <button class="mode-btn" data-players="4">4 Jugadores</button>
+    </div>
+
+    <div class="game-container">
+        <div class="status-display" id="status">Selecciona el modo y presiona Iniciar</div>
+
+        <div class="scoreboard" id="scoreboard">
+            <div class="score-card active">
+                <div class="player-name">Jugador 1</div>
+                <div class="player-score" id="score-0">0</div>
+            </div>
+        </div>
+
+        <div class="notes-container" id="notes-container">
+            <button class="note-btn note-do disabled" data-note="Do" data-index="0">Do</button>
+            <button class="note-btn note-re disabled" data-note="Re" data-index="1">Re</button>
+            <button class="note-btn note-mi disabled" data-note="Mi" data-index="2">Mi</button>
+            <button class="note-btn note-fa disabled" data-note="Fa" data-index="3">Fa</button>
+            <button class="note-btn note-sol disabled" data-note="Sol" data-index="4">Sol</button>
+            <button class="note-btn note-la disabled" data-note="La" data-index="5">La</button>
+            <button class="note-btn note-si disabled" data-note="Si" data-index="6">Si</button>
+        </div>
+
+        <div class="game-buttons">
+            <button class="game-btn start-btn-new" id="start-btn">Iniciar</button>
+            <button class="game-btn pause-btn" id="pause-btn" disabled>Pausar</button>
+            <button class="game-btn restart-btn" id="restart-btn" disabled>Reiniciar</button>
+        </div>
+    </div>
+
+    <p class="instructions">
+        El sistema reproducirá una secuencia de notas. Repítela en el mismo orden para ganar puntos.<br>
+        <strong>1 jugador:</strong> Cada acierto suma puntos. Cada fallo resta puntos.<br>
+        <strong>Multiplayer:</strong> El que falla pierde el turno. El siguiente intenta la misma secuencia.
+    </p>
+
+    <script>
+        const NOTES = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si'];
+        const NOTE_FREQUENCIES = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88];
+        
+        let audioContext = null;
+        let gameState = {
+            mode: 1,
+            sequence: [],
+            playerSequence: [],
+            currentPlayer: 0,
+            scores: [0],
+            isPlaying: false,
+            isPlayerTurn: false,
+            gameStarted: false,
+            isPaused: false,
+            pauseTimeout: null
+        };
+
+        const statusEl = document.getElementById('status');
+        const scoreboardEl = document.getElementById('scoreboard');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const noteBtns = document.querySelectorAll('.note-btn');
+        const modeBtns = document.querySelectorAll('.mode-btn');
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playNote(index, duration = 300) {
+            if (!audioContext) initAudio();
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = NOTE_FREQUENCIES[index];
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration / 1000);
+        }
+
+        function highlightNote(index, duration = 400) {
+            const btn = noteBtns[index];
+            btn.classList.add('active');
+            playNote(index);
+            setTimeout(() => btn.classList.remove('active'), duration);
+        }
+
+        function setNotesEnabled(enabled) {
+            noteBtns.forEach(btn => {
+                btn.classList.toggle('disabled', !enabled);
+            });
+        }
+
+        function updateScoreboard() {
+            scoreboardEl.innerHTML = '';
+            for (let i = 0; i < gameState.mode; i++) {
+                const isActive = i === gameState.currentPlayer && gameState.isPlayerTurn;
+                const card = document.createElement('div');
+                card.className = `score-card${isActive ? ' active' : ''}`;
+                card.innerHTML = `
+                    <div class="player-name">Jugador ${i + 1}</div>
+                    <div class="player-score">${gameState.scores[i]}</div>
+                `;
+                scoreboardEl.appendChild(card);
+            }
+        }
+
+        function addToSequence() {
+            const randomNote = Math.floor(Math.random() * 7);
+            gameState.sequence.push(randomNote);
+        }
+
+        async function playSequence() {
+            if (gameState.isPaused) return;
+            
+            gameState.isPlaying = true;
+            setNotesEnabled(false);
+            statusEl.textContent = 'Observa la secuencia...';
+            
+            await sleep(500);
+            
+            for (let i = 0; i < gameState.sequence.length; i++) {
+                if (gameState.isPaused) {
+                    while (gameState.isPaused && gameState.gameStarted) {
+                        await sleep(100);
+                    }
+                    if (!gameState.gameStarted) return;
+                }
+                highlightNote(gameState.sequence[i]);
+                await sleep(500);
+            }
+            
+            gameState.isPlaying = false;
+            gameState.isPlayerTurn = true;
+            gameState.playerSequence = [];
+            setNotesEnabled(true);
+            
+            if (gameState.mode > 1) {
+                statusEl.textContent = `Jugador ${gameState.currentPlayer + 1}: Repite la secuencia`;
+            } else {
+                statusEl.textContent = 'Tu turno: Repite la secuencia';
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function checkPlayerInput(noteIndex) {
+            if (!gameState.isPlayerTurn) return;
+            
+            highlightNote(noteIndex);
+            gameState.playerSequence.push(noteIndex);
+            
+            const currentIndex = gameState.playerSequence.length - 1;
+            
+            if (gameState.playerSequence[currentIndex] !== gameState.sequence[currentIndex]) {
+                handleMistake();
+                return;
+            }
+            
+            if (gameState.playerSequence.length === gameState.sequence.length) {
+                handleSuccess();
+            }
+        }
+
+        function handleSuccess() {
+            gameState.isPlayerTurn = false;
+            setNotesEnabled(false);
+            
+            const points = gameState.sequence.length;
+            gameState.scores[gameState.currentPlayer] += points;
+            
+            updateScoreboard();
+            
+            if (gameState.mode > 1) {
+                statusEl.textContent = `¡Jugador ${gameState.currentPlayer + 1} acertó! +${points} puntos`;
+            } else {
+                statusEl.textContent = `¡Correcto! +${points} puntos`;
+            }
+            
+            if (gameState.isPaused) {
+                gameState.isPaused = false;
+                pauseBtn.textContent = 'Pausar';
+            }
+            
+            gameState.pauseTimeout = setTimeout(() => {
+                addToSequence();
+                gameState.playerSequence = [];
+                playSequence();
+            }, 1500);
+        }
+
+        function handleMistake() {
+            gameState.isPlayerTurn = false;
+            setNotesEnabled(false);
+            
+            const failedNotes = gameState.sequence.length;
+            
+            if (gameState.isPaused) {
+                gameState.isPaused = false;
+                pauseBtn.textContent = 'Pausar';
+            }
+            
+            if (gameState.mode === 1) {
+                gameState.scores[0] = Math.max(0, gameState.scores[0] - failedNotes);
+                updateScoreboard();
+                statusEl.textContent = `¡Fallaste! -${failedNotes} puntos`;
+                
+                gameState.pauseTimeout = setTimeout(() => {
+                    gameState.sequence = [];
+                    gameState.playerSequence = [];
+                    addToSequence();
+                    playSequence();
+                }, 1500);
+            } else {
+                statusEl.textContent = `Jugador ${gameState.currentPlayer + 1} falló`;
+                
+                gameState.pauseTimeout = setTimeout(() => {
+                    const nextPlayer = (gameState.currentPlayer + 1) % gameState.mode;
+                    
+                    if (nextPlayer === 0) {
+                        gameState.sequence = [];
+                        addToSequence();
+                        statusEl.textContent = 'Nueva ronda - Jugador 1';
+                    } else {
+                        statusEl.textContent = `Turno: Jugador ${nextPlayer + 1}`;
+                    }
+                    
+                    gameState.currentPlayer = nextPlayer;
+                    gameState.playerSequence = [];
+                    updateScoreboard();
+                    
+                    setTimeout(() => {
+                        playSequence();
+                    }, 1000);
+                }, 1500);
+            }
+        }
+
+        function startGame() {
+            initAudio();
+            gameState.sequence = [];
+            gameState.playerSequence = [];
+            gameState.currentPlayer = 0;
+            gameState.scores = Array(gameState.mode).fill(0);
+            gameState.gameStarted = true;
+            gameState.isPaused = false;
+            
+            updateScoreboard();
+            addToSequence();
+            
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+            restartBtn.disabled = false;
+            
+            playSequence();
+        }
+
+        function togglePause() {
+            if (!gameState.gameStarted) return;
+            
+            gameState.isPaused = !gameState.isPaused;
+            
+            if (gameState.isPaused) {
+                statusEl.textContent = 'Juego pausado';
+                pauseBtn.textContent = 'Continuar';
+            } else {
+                pauseBtn.textContent = 'Pausar';
+                if (gameState.isPlayerTurn) {
+                    if (gameState.mode > 1) {
+                        statusEl.textContent = `Jugador ${gameState.currentPlayer + 1}: Repite la secuencia`;
+                    } else {
+                        statusEl.textContent = 'Tu turno: Repite la secuencia';
+                    }
+                } else if (gameState.isPlaying) {
+                    statusEl.textContent = 'Observa la secuencia...';
+                }
+            }
+        }
+
+        function restartGame() {
+            gameState.sequence = [];
+            gameState.playerSequence = [];
+            gameState.currentPlayer = 0;
+            gameState.scores = Array(gameState.mode).fill(0);
+            gameState.gameStarted = true;
+            gameState.isPaused = false;
+            gameState.isPlaying = false;
+            gameState.isPlayerTurn = false;
+            
+            updateScoreboard();
+            addToSequence();
+            
+            statusEl.textContent = 'Juego reiniciado';
+            
+            setTimeout(() => {
+                playSequence();
+            }, 1000);
+        }
+
+        function fullReset() {
+            gameState.sequence = [];
+            gameState.playerSequence = [];
+            gameState.currentPlayer = 0;
+            gameState.scores = Array(gameState.mode).fill(0);
+            gameState.gameStarted = false;
+            gameState.isPaused = false;
+            gameState.isPlaying = false;
+            gameState.isPlayerTurn = false;
+            
+            updateScoreboard();
+            setNotesEnabled(false);
+            statusEl.textContent = 'Selecciona el modo y presiona Iniciar';
+            
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            restartBtn.disabled = true;
+            pauseBtn.textContent = 'Pausar';
+        }
+
+        function setMode(players) {
+            gameState.mode = players;
+            gameState.scores = Array(players).fill(0);
+            gameState.currentPlayer = 0;
+            gameState.gameStarted = false;
+            gameState.sequence = [];
+            gameState.playerSequence = [];
+            gameState.isPlaying = false;
+            gameState.isPlayerTurn = false;
+            gameState.isPaused = false;
+            
+            updateScoreboard();
+            setNotesEnabled(false);
+            statusEl.textContent = 'Selecciona el modo y presiona Iniciar';
+            
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            restartBtn.disabled = true;
+            pauseBtn.textContent = 'Pausar';
+        }
+
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                setMode(parseInt(btn.dataset.players));
+            });
+        });
+
+        noteBtns.forEach((btn, index) => {
+            btn.addEventListener('click', () => {
+                if (!btn.classList.contains('disabled')) {
+                    checkPlayerInput(index);
+                }
+            });
+        });
+
+        startBtn.addEventListener('click', startGame);
+        pauseBtn.addEventListener('click', togglePause);
+        restartBtn.addEventListener('click', restartGame);
+
+        updateScoreboard();
+    </script>
+</body>
+</html>
